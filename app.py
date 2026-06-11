@@ -7,7 +7,7 @@ import re
 
 
 azure_client = OpenAI(
-    api_key="API_KEY",
+    api_key = st.secrets["API_KEY"],
     base_url="https://prakash-alla.openai.azure.com/openai/v1"
 )
 

@@ -6,6 +6,7 @@ CareerPilot AI is an AI-powered career coaching platform built for the Microsoft
 
 The platform helps students, graduates and job seekers evaluate their career readiness, improve resumes, prepare for interviews, identify skill gaps and generate personalized career roadmaps using Azure AI.
 
+Website: https://careerpilot-ai-agent.streamlit.app/
 ---
 
 ## 🌟 Features

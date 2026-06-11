@@ -1,7 +1,28 @@
 import streamlit as st
+from openai import OpenAI
 import requests
 from pypdf import PdfReader
+import re
 
+
+
+azure_client = OpenAI(
+    api_key="API KEY",
+    base_url="https://prakash-alla.openai.azure.com/openai/v1"
+)
+
+
+def load_css():
+        with open("styles.css", "r", encoding="utf-8") as f:
+            css = f.read()
+
+        st.markdown(
+            f"<style>{css}</style>",
+            unsafe_allow_html=True
+        )
+
+
+load_css()
 # -----------------------------
 # Page Config
 # -----------------------------
@@ -11,22 +32,116 @@ st.set_page_config(
     layout="wide"
 )
 
+st.markdown("""
+<style>
+
+.main {
+    background-color: #0f172a;
+}
+
+.block-container {
+    padding-top: 2rem;
+}
+
+div[data-testid="stMetric"] {
+    background-color: #1e293b;
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.stButton button {
+    width: 100%;
+    border-radius: 12px;
+    height: 3em;
+    font-weight: bold;
+}
+
+</style>
+""", unsafe_allow_html=True)
 # -----------------------------
 # UI Header
 # -----------------------------
-st.title("🚀 CareerPilot AI")
+nav1, nav2, nav3, nav4, nav5, nav6, nav7, nav8 = st.columns(
+    [1,1,1,1,1,1,1,1]
+)
+
+
+with nav1:
+    if st.button("🏠 Home"):
+        st.session_state.page = "Dashboard"
+
+with nav2:
+    if st.button("🤖 AI Agent"):
+        st.session_state.page = "Career Assessment Agent"
+
+with nav3:
+    if st.button("📄 Resume Review"):
+        st.session_state.page = "Resume Review"
+
+with nav4:
+    if st.button("🎤 Interview Prep"):
+        st.session_state.page = "Interview Prep"
+
+with nav5:
+    if st.button("🎯 Skill Gap"):
+        st.session_state.page = "Skill Gap Analysis"
+
+with nav6:
+    if st.button("📊 Job Match"):
+        st.session_state.page = "Resume Job Match"
+
+with nav7:
+    if st.button("🗺️ Roadmap"):
+        st.session_state.page = "Career Roadmap"
+
+with nav8:
+    ai_provider = st.selectbox(
+        "",
+        ["Azure AI", "Ollama"],
+        label_visibility="collapsed"
+    )
+
+st.markdown(
+    "<hr style='margin-top:5px;margin-bottom:10px;'>",
+    unsafe_allow_html=True
+)
 
 st.markdown("""
-### Your Personal AI Career Coach
+<div style="
+padding:20px;
+border-radius:16px;
+background: linear-gradient(135deg, #0078D4, #50E6FF);
+text-align:center;
+margin-bottom:15px;
+">
 
-Features:
-- 📄 Resume Review
-- 🎤 Interview Preparation
-- 🎯 Skill Gap Analysis
-- 📊 Resume Job Match
-- 🗺️ Career Roadmap
-- 💬 Career Guidance
-""")
+<h1 style="
+color:white;
+margin-bottom:5px;
+font-size:2.3rem;
+">
+🚀 CareerPilot AI
+</h1>
+
+<h4 style="
+color:white;
+margin-top:0;
+margin-bottom:9px;
+">
+Your Intelligent Career Co-Pilot
+</h4>
+
+<p style="
+color:white;
+font-size:17px;
+margin-bottom:0;
+">
+AI-powered career assessments, resume intelligence,
+interview coaching, skill-gap analysis and personalized roadmaps.
+</p>
+
+</div>
+""", unsafe_allow_html=True)
 
 # -----------------------------
 # Helper Functions
@@ -44,7 +159,7 @@ def extract_text(pdf_file):
     return text
 
 
-def generate_ai_response(prompt):
+def generate_ollama_response(prompt):
     with st.spinner("Analyzing..."):
         response = requests.post(
             "http://localhost:11434/api/generate",
@@ -58,63 +173,79 @@ def generate_ai_response(prompt):
     st.success("Analysis Complete!")
     return response.json()["response"]
 
+def generate_azure_response(prompt):
 
-# -----------------------------
-# Sidebar Navigation
-# -----------------------------
-page = st.sidebar.selectbox(
-    "Choose Feature",
-    [
-        "Dashboard",
-        "Career Chat",
-        "Resume Review",
-        "Interview Prep",
-        "Skill Gap Analysis",
-        "Resume Job Match",
-        "Career Roadmap"
-    ]
-)
+    with st.spinner("Analyzing with Azure AI..."):
+
+        response = azure_client.chat.completions.create(
+            model="gpt-oss-120b",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+    return response.choices[0].message.content
+
+def generate_ai_response(prompt):
+
+    if ai_provider == "Azure AI":
+        return generate_azure_response(prompt)
+
+    else:
+        return generate_ollama_response(prompt)
+
+
+if "page" not in st.session_state:
+    st.session_state.page = "Dashboard"
+
+
+page = st.session_state.page
+
 
 # -----------------------------
 # Dashboard
 # -----------------------------
+
+
 if page == "Dashboard":
 
     st.header("🚀 Welcome to CareerPilot AI")
 
-    col1, col2 = st.columns(2)
+    st.success(
+        "AI-powered career guidance platform for students, graduates, and job seekers."
+    )
+
+    # Metrics Row
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.info("📄 Resume Review")
+        st.metric(
+            "AI Provider",
+            ai_provider
+        )
 
     with col2:
-        st.info("🎤 Interview Preparation")
-
-    col3, col4 = st.columns(2)
+        st.metric(
+            "Features",
+            "6+"
+        )
 
     with col3:
-        st.info("🎯 Skill Gap Analysis")
+        st.metric(
+            "Career Analysis",
+            "Ready"
+        )
 
-    with col4:
-        st.info("📊 Resume Job Match")
+    st.divider()
+
 
     st.success(
         "Your AI-powered career coach for students and job seekers."
     )
 
-# -----------------------------
-# Career Chat
-# -----------------------------
-elif page == "Career Chat":
-
-    st.header("💬 Career Chat")
-
-    prompt = st.text_area("Ask a career question")
-
-    if st.button("Generate Response"):
-
-        result = generate_ai_response(prompt)
-        st.write(result)
 
 # -----------------------------
 # Resume Review
@@ -184,7 +315,7 @@ elif page == "Interview Prep":
 
     role = st.text_input("Enter Target Job Role")
 
-    if st.button("Generate Interview Questions"):
+    if role:
 
         prompt = f"""
 Generate:
@@ -217,7 +348,7 @@ elif page == "Skill Gap Analysis":
         "Target Role"
     )
 
-    if st.button("Analyze Skill Gap"):
+    if current_skills and target_role:
 
         prompt = f"""
 You are an AI career advisor.
@@ -307,7 +438,7 @@ elif page == "Career Roadmap":
         "Target Career Goal"
     )
 
-    if st.button("Generate Roadmap"):
+    if current_role and target_role:
 
         prompt = f"""
 Create a detailed career roadmap.
@@ -330,3 +461,193 @@ Provide:
         result = generate_ai_response(prompt)
 
         st.write(result)
+
+
+#-----------------
+#Career Assessment Page
+#-----------------
+
+elif page == "Career Assessment Agent":
+
+    st.header("🤖 Career Assessment Agent")
+
+    uploaded_file = st.file_uploader(
+        "Upload Resume",
+        type=["pdf"]
+    )
+
+    target_role = st.text_input(
+        "Target Role"
+    )
+
+    if uploaded_file and target_role:
+
+        if st.button("🚀 Analyze Me"):
+
+            resume_text = extract_text(uploaded_file)
+
+            prompt = f"""
+                You are an expert AI Career Coach.
+
+                Analyze the following resume for the target role.
+
+                TARGET ROLE:
+                {target_role}
+
+                RESUME:
+                {resume_text}
+
+                Provide your response in the following format:
+
+                # Career Readiness Score
+                Analyze the resume against the target role and provide a realistic score from 0-100.
+
+                Format:
+                Career Readiness Score: XX
+
+                Do NOT default to scores around 70-80.
+                Give a genuinely calculated score based on:
+                - skills match
+                - experience match
+                - projects
+                - certifications
+                - resume quality
+
+                # Resume Strengths
+                List the strongest aspects.
+
+                # Resume Weaknesses
+                List improvement areas.
+
+                # Skill Gap Analysis
+                Compare the candidate against the target role.
+
+                # Missing Skills
+                List missing technical and soft skills.
+
+                # Learning Roadmap
+                Provide a step-by-step roadmap.
+
+                # Recommended Certifications
+                Suggest relevant certifications.
+
+                # Interview Preparation
+                Generate:
+                - 5 Technical Questions
+                - 5 Behavioral Questions
+
+                # Final Career Advice
+                Provide personalized recommendations.
+                """
+            
+            status = st.status(
+                "🤖 CareerPilot AI Agent Working...",
+                expanded=True
+            )
+
+            status.write("📄 Reading resume...")
+            status.write("🎯 Understanding target role...")
+            status.write("🔍 Identifying strengths and weaknesses...")
+            status.write("📊 Calculating readiness score...")
+            status.write("🧠 Generating recommendations...")
+            
+
+            result = generate_ai_response(prompt)
+
+            result = re.sub(
+                r"Career Readiness Score:\s*\d+\s*",
+                "",
+                result,
+                re.IGNORECASE
+            )
+
+
+            status.update(
+                label="✅ Assessment Complete",
+                state="complete"
+            )
+
+            insight_prompt = f"""
+            Based on this assessment, provide ONE short career insight.
+
+            Maximum 20 words.
+
+            Assessment:
+            {result}
+            """
+
+            insight = generate_ai_response(insight_prompt)
+            st.info(f"💡 Career Insight: {insight}")
+
+            score_match = re.search(
+                r"(\d{1,3})",
+                result
+            )
+
+            score = 0
+
+            if score_match:
+                score = int(score_match.group(1))
+
+            else:
+                st.warning(
+                    "Could not extract readiness score."
+                )
+
+            st.metric(
+                "Career Readiness Score",
+                f"{score}/100"
+            )
+
+            st.subheader("⚙️ Agent Workflow")
+
+            c1, c2, c3, c4, c5 = st.columns(5)
+
+            with c1:
+                st.success("📄 Resume")
+
+            with c2:
+                st.success("🎯 Role")
+
+            with c3:
+                st.success("🧠 Analysis")
+
+            with c4:
+                st.success("📊 Scoring")
+
+            with c5:
+                st.success("🚀 Roadmap")
+
+            if score >= 80:
+                status = "Job Ready"
+            elif score >= 60:
+                status = "Almost Ready"
+            else:
+                status = "Needs Development"
+
+
+            st.progress(score)
+
+            st.subheader("🤖 Career Assessment Report")
+
+            st.write(result)
+
+            with st.expander("View Extracted Resume"):
+                st.text_area(
+                    "",
+                    resume_text[:1000],
+                    height=200
+                )
+
+            st.download_button(
+                "📥 Download Report",
+                result,
+                file_name="career_report.txt"
+            )
+
+
+            st.divider()
+
+            st.caption(
+                "Built with Azure AI, Streamlit, Ollama and GitHub Copilot"
+            )
